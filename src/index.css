@@ -278,3 +278,13 @@ body {
   color: white;
   opacity: 0.9;
 }
+
+.error-gif {
+  max-width: 100%;
+  width: 400px; 
+  height: auto;
+  margin: 20px auto;
+  display: block;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
