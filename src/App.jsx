@@ -1,10 +1,11 @@
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
-import { MovieContext } from "./MovieContext";
 import { MovieProvider } from "./MovieProvider";
-import Home from "./pages/Home";
-import MoviesPage from "./pages/MoviesPage";
-import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
+
+const Home = lazy(() => import("./pages/Home"));
+const MoviesPage = lazy(() => import("./pages/MoviesPage"));
+const Profile = lazy(() => import("./pages/Profile"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 function App() {
   return (
@@ -16,14 +17,17 @@ function App() {
           <NavLink to="/profile" className={({ isActive }) => isActive ? "active" : ""}>Profile</NavLink>
         </nav>
 
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/movies" element={<MoviesPage />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<div style={{color: "var(--accent)", textAlign: "center"}}>Loading...</div>}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/movies" element={<MoviesPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </MovieProvider>
   );
 }
+
 export default App;

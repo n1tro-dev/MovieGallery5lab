@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { MovieContext } from "./MovieContext";
 
 export const MovieProvider = ({ children }) => {
@@ -91,29 +91,22 @@ export const MovieProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  useEffect(() => {
-    localStorage.setItem("my_favorites", JSON.stringify(favorites));
-  }, [favorites]);
+  const toggleFavorite = useCallback((id) => {
+    setFavorites(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  }, []);
 
-  const toggleFavorite = (id) => {
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id],
-    );
-  };
+  const addMovie = useCallback((m) => {
+    setMovies(prev => [...prev, { ...m, id: Date.now() }]);
+  }, []);
 
-  const addMovie = (newMovie) => {
-    setMovies([...movies, { ...newMovie, id: Date.now() }]);
-  };
+  const deleteMovie = useCallback((id) => {
+    setMovies(prev => prev.filter(m => m.id !== id));
+  }, []);
 
-  const deleteMovie = (id) => {
-    setMovies(movies.filter((m) => m.id !== id));
-  };
+  // Оптимизация провайдера (Задача №11)
+  const value = useMemo(() => ({
+    movies, favorites, toggleFavorite, addMovie, deleteMovie
+  }), [movies, favorites, toggleFavorite, addMovie, deleteMovie]);
 
-  return (
-    <MovieContext.Provider
-      value={{ movies, favorites, toggleFavorite, addMovie, deleteMovie }}
-    >
-      {children}
-    </MovieContext.Provider>
-  );
+  return <MovieContext.Provider value={value}>{children}</MovieContext.Provider>;
 };

@@ -10,10 +10,10 @@ const Profile = () => {
       <div className="stats-container">
         <div className="stat-card">
           <h3>Total Movies</h3>
-          <p>{movies.length}</p> 
+          <p>{movies.length}</p>
         </div>
         <div className="stat-card">
-          <h3>My Favorites</h3>
+          <h3>Favorites</h3>
           <p>{favorites.length}</p>
         </div>
       </div>
