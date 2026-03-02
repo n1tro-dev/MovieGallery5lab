@@ -8,16 +8,14 @@ const MovieCard = React.memo(({ movie, isFavorite, onToggleFav, onDelete, onOpen
       <p>{movie.year} | ⭐ {movie.rating}</p>
       
       <div className="card-btns">
-        {/* Используем классы из твоего CSS */}
         <button 
           className={`fav-btn ${isFavorite ? "active" : ""}`} 
           onClick={(e) => { e.stopPropagation(); onToggleFav(movie.id); }}
         >
-          {isFavorite ? "❤️ В избранном" : "🤍 В избранное"}
+          {isFavorite ? "❤️" : "🤍"}
         </button>
         <button 
           className="fav-btn" 
-          style={{borderColor: "red", color: "red"}} 
           onClick={(e) => { e.stopPropagation(); onDelete(movie.id); }}
         >
           🗑️
