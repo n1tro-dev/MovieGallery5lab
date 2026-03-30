@@ -1,4 +1,5 @@
 const TVMAZE_URL = "https://api.tvmaze.com/shows?page=1";
+const MOVIE_UPDATE_URL = "https://jsonplaceholder.typicode.com/posts";
 
 export const DEFAULT_MOVIES = [
   {
@@ -111,4 +112,25 @@ export const fetchMoviesFromApi = async () => {
     .map(normalizeShowToMovie)
     .filter((movie) => movie.poster)
     .slice(0, 24);
+};
+
+export const updateMovieOnApi = async (movieId, moviePayload) => {
+  const response = await fetch(`${MOVIE_UPDATE_URL}/${movieId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(moviePayload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update movie through API");
+  }
+
+  const data = await response.json();
+
+  return {
+    ...moviePayload,
+    id: Number(data.id ?? movieId),
+  };
 };

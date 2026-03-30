@@ -172,6 +172,28 @@ body {
   align-items: stretch;
 }
 
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--bg-card);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 /* Карточка */
 .card {
@@ -260,6 +282,12 @@ body {
   border-radius: 10px;
   margin-bottom: 15px;
   display: block;   
+}
+
+.modal-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
 }
 
 .fav-btn {

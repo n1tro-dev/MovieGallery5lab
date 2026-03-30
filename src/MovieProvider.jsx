@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { MovieContext } from "./MovieContext";
 import { useFetch } from "./hooks/useFetch";
-import { DEFAULT_MOVIES, fetchMoviesFromApi } from "./services/movieApi";
+import {
+  DEFAULT_MOVIES,
+  fetchMoviesFromApi,
+  updateMovieOnApi,
+} from "./services/movieApi";
 
 export const MovieProvider = ({ children }) => {
   const [localMovies, setLocalMovies] = useState(() => {
@@ -22,6 +26,14 @@ export const MovieProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [movieOverrides, setMovieOverrides] = useState(() => {
+    const saved = localStorage.getItem("my_movie_overrides");
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [updatingMovieId, setUpdatingMovieId] = useState(null);
+  const [updateError, setUpdateError] = useState(null);
+
   const getApiMovies = useCallback(() => fetchMoviesFromApi(), []);
 
   const {
@@ -32,10 +44,15 @@ export const MovieProvider = ({ children }) => {
   } = useFetch(getApiMovies, { initialData: [] });
 
   const movies = useMemo(() => {
-    const merged = [...apiMovies, ...localMovies];
+    const merged = [...apiMovies, ...localMovies]
+      .filter((movie) => !deletedMovieIds.includes(movie.id))
+      .map((movie) => ({
+        ...movie,
+        ...(movieOverrides[movie.id] || {}),
+      }));
 
-    return merged.filter((movie) => !deletedMovieIds.includes(movie.id));
-  }, [apiMovies, localMovies, deletedMovieIds]);
+    return merged;
+  }, [apiMovies, localMovies, deletedMovieIds, movieOverrides]);
 
   useEffect(() => {
     localStorage.setItem("my_local_movies", JSON.stringify(localMovies));
@@ -48,6 +65,10 @@ export const MovieProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem("my_deleted_movies", JSON.stringify(deletedMovieIds));
   }, [deletedMovieIds]);
+
+  useEffect(() => {
+    localStorage.setItem("my_movie_overrides", JSON.stringify(movieOverrides));
+  }, [movieOverrides]);
 
   const toggleFavorite = useCallback((id) => {
     setFavorites((prev) =>
@@ -71,6 +92,56 @@ export const MovieProvider = ({ children }) => {
     setLocalMovies((prev) => prev.filter((m) => m.id !== id));
     setDeletedMovieIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
     setFavorites((prev) => prev.filter((movieId) => movieId !== id));
+    setMovieOverrides((prev) => {
+      if (!prev[id]) {
+        return prev;
+      }
+
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
+
+  const updateMovie = useCallback(async (movie) => {
+    const normalizedMovie = {
+      ...movie,
+      id: Number(movie.id),
+      year: Number(movie.year),
+      rating: Number(movie.rating),
+    };
+
+    setUpdatingMovieId(normalizedMovie.id);
+    setUpdateError(null);
+
+    try {
+      const updatedMovie = await updateMovieOnApi(
+        normalizedMovie.id,
+        normalizedMovie,
+      );
+
+      setLocalMovies((prev) =>
+        prev.some((item) => item.id === updatedMovie.id)
+          ? prev.map((item) =>
+              item.id === updatedMovie.id ? { ...item, ...updatedMovie } : item,
+            )
+          : prev,
+      );
+
+      setMovieOverrides((prev) => ({
+        ...prev,
+        [updatedMovie.id]: updatedMovie,
+      }));
+
+      return updatedMovie;
+    } catch (err) {
+      const nextError =
+        err instanceof Error ? err : new Error("Failed to update movie");
+      setUpdateError(nextError);
+      throw nextError;
+    } finally {
+      setUpdatingMovieId(null);
+    }
   }, []);
 
 
@@ -80,9 +151,12 @@ export const MovieProvider = ({ children }) => {
       favorites,
       apiLoading,
       apiError,
+      updateError,
+      updatingMovieId,
       toggleFavorite,
       addMovie,
       deleteMovie,
+      updateMovie,
       refetchMovies,
     }),
     [
@@ -90,9 +164,12 @@ export const MovieProvider = ({ children }) => {
       favorites,
       apiLoading,
       apiError,
+      updateError,
+      updatingMovieId,
       toggleFavorite,
       addMovie,
       deleteMovie,
+      updateMovie,
       refetchMovies,
     ],
   );

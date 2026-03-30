@@ -1,8 +1,9 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { MovieContext } from "../MovieContext";
 import MovieCard from "./MovieCard";
 import { useFilter } from "../hooks/useFilter";
 import { useForm } from "../hooks/useForm";
+import { useModal } from "../hooks/useModal";
 
 const INITIAL_FORM_VALUES = {
   title: "",
@@ -14,6 +15,7 @@ const INITIAL_FORM_VALUES = {
 };
 
 const currentYear = new Date().getFullYear();
+const MOVIES_PER_PAGE = 8;
 
 const validateMovie = (values) => {
   const errors = {};
@@ -57,23 +59,42 @@ const MoviesPage = () => {
     toggleFavorite,
     addMovie,
     deleteMovie,
+    updateMovie,
     apiLoading,
     apiError,
+    updateError,
+    updatingMovieId,
     refetchMovies,
   } = useContext(MovieContext);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [sortBy, setSortBy] = useState("title");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const [selectedMovie, setSelectedMovie] = useState(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const createModal = useModal();
+  const detailsModal = useModal();
+  const editModal = useModal();
+
+  const [editValues, setEditValues] = useState(INITIAL_FORM_VALUES);
+  const [editTouched, setEditTouched] = useState({});
 
   const { filteredMovies, uniqueGenres } = useFilter(movies, {
     searchTerm,
     selectedGenre,
     sortBy,
   });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredMovies.length / MOVIES_PER_PAGE),
+  );
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedMovies = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * MOVIES_PER_PAGE;
+    return filteredMovies.slice(startIndex, startIndex + MOVIES_PER_PAGE);
+  }, [filteredMovies, safeCurrentPage]);
 
   const {
     values,
@@ -92,17 +113,98 @@ const MoviesPage = () => {
         title: formValues.title.trim(),
         description: formValues.description.trim(),
       });
-      setIsAddModalOpen(false);
+      createModal.close();
       resetForm();
     },
   });
 
+  const editErrors = useMemo(() => validateMovie(editValues), [editValues]);
+
   const openCreateModal = () => {
-    setIsAddModalOpen(true);
+    createModal.open();
   };
 
   const closeCreateModal = () => {
-    setIsAddModalOpen(false);
+    createModal.close();
+  };
+
+  const openDetailsModal = (movie) => {
+    detailsModal.open(movie);
+  };
+
+  const openEditModal = (movie) => {
+    setEditValues({
+      title: movie.title || "",
+      genre: movie.genre || "",
+      rating: String(movie.rating ?? ""),
+      poster: movie.poster || "",
+      year: String(movie.year ?? ""),
+      description: movie.description || "",
+    });
+    setEditTouched({});
+    detailsModal.close();
+    editModal.open(movie);
+  };
+
+  const handleEditChange = (event) => {
+    const { name, value } = event.target;
+
+    setEditValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleEditBlur = (event) => {
+    const { name } = event.target;
+    setEditTouched((prev) => ({ ...prev, [name]: true }));
+  };
+
+  const getEditFieldError = (fieldName) =>
+    editTouched[fieldName] && editErrors[fieldName] ? editErrors[fieldName] : "";
+
+  const renderEditError = (fieldName) => {
+    const fieldError = getEditFieldError(fieldName);
+
+    if (!fieldError) {
+      return null;
+    }
+
+    return (
+      <span style={{ color: "red", fontSize: "0.8rem" }}>{fieldError}</span>
+    );
+  };
+
+  const handleEditSubmit = async (event) => {
+    event.preventDefault();
+
+    const markedTouched = Object.keys(editValues).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {});
+
+    setEditTouched(markedTouched);
+
+    if (Object.values(editErrors).some(Boolean) || !editModal.data) {
+      return;
+    }
+
+    const payload = {
+      ...editModal.data,
+      ...editValues,
+      title: editValues.title.trim(),
+      description: editValues.description.trim(),
+      year: Number(editValues.year),
+      rating: Number(editValues.rating),
+    };
+
+    try {
+      const updatedMovie = await updateMovie(payload);
+      editModal.close();
+      detailsModal.open(updatedMovie);
+    } catch {
+      // Error state is exposed from context and rendered in the modal.
+    }
   };
 
   const getFieldError = (fieldName) =>
@@ -129,11 +231,17 @@ const MoviesPage = () => {
           type="text"
           placeholder="Search movies..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
         />
         <select
           value={selectedGenre}
-          onChange={(e) => setSelectedGenre(e.target.value)}
+          onChange={(e) => {
+            setSelectedGenre(e.target.value);
+            setCurrentPage(1);
+          }}
         >
           {uniqueGenres.map((g) => (
             <option key={g} value={g}>
@@ -141,7 +249,13 @@ const MoviesPage = () => {
             </option>
           ))}
         </select>
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+        <select
+          value={sortBy}
+          onChange={(e) => {
+            setSortBy(e.target.value);
+            setCurrentPage(1);
+          }}
+        >
           <option value="title">Sort by Name</option>
           <option value="rating">Sort by Rating</option>
           <option value="year">Sort by Year</option>
@@ -164,19 +278,41 @@ const MoviesPage = () => {
       )}
 
       <div className="movie-grid">
-        {filteredMovies.map((movie) => (
+        {paginatedMovies.map((movie) => (
           <MovieCard
             key={movie.id}
             movie={movie}
             isFavorite={favorites.includes(movie.id)}
             onToggleFav={toggleFavorite}
             onDelete={deleteMovie}
-            onOpen={setSelectedMovie}
+            onOpen={openDetailsModal}
           />
         ))}
       </div>
 
-      {isAddModalOpen && (
+      <div className="pagination">
+        <button
+          type="button"
+          disabled={safeCurrentPage === 1}
+          onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+        >
+          Prev
+        </button>
+        <span>
+          Page {safeCurrentPage} of {totalPages}
+        </span>
+        <button
+          type="button"
+          disabled={safeCurrentPage === totalPages}
+          onClick={() =>
+            setCurrentPage((page) => Math.min(totalPages, page + 1))
+          }
+        >
+          Next
+        </button>
+      </div>
+
+      {createModal.isOpen && (
         <div className="modal-overlay" onClick={closeCreateModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <form className="add-form" onSubmit={handleSubmit}>
@@ -268,21 +404,127 @@ const MoviesPage = () => {
         </div>
       )}
 
-      {selectedMovie && (
-        <div className="modal-overlay" onClick={() => setSelectedMovie(null)}>
+      {detailsModal.isOpen && detailsModal.data && (
+        <div className="modal-overlay" onClick={detailsModal.close}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <img src={selectedMovie.poster} alt={selectedMovie.title} />
-            <h2>{selectedMovie.title}</h2>
+            <img src={detailsModal.data.poster} alt={detailsModal.data.title} />
+            <h2>{detailsModal.data.title}</h2>
             <p>
-              ⭐ {selectedMovie.rating} | {selectedMovie.genre}
+              ⭐ {detailsModal.data.rating} | {detailsModal.data.genre}
             </p>
-            <p>{selectedMovie.description}</p>
-            <button
-              className="add-form button"
-              onClick={() => setSelectedMovie(null)}
-            >
-              Close
-            </button>
+            <p>{detailsModal.data.description}</p>
+            <div className="modal-actions">
+              <button className="fav-btn" onClick={() => openEditModal(detailsModal.data)}>
+                Edit
+              </button>
+              <button className="fav-btn" onClick={detailsModal.close}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editModal.isOpen && editModal.data && (
+        <div className="modal-overlay" onClick={editModal.close}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <form className="add-form" onSubmit={handleEditSubmit}>
+              <h2>Edit Movie</h2>
+
+              <input
+                name="title"
+                placeholder="Title"
+                value={editValues.title}
+                onChange={handleEditChange}
+                onBlur={handleEditBlur}
+                required
+              />
+              {renderEditError("title")}
+
+              <select
+                name="genre"
+                value={editValues.genre}
+                onChange={handleEditChange}
+                onBlur={handleEditBlur}
+                required
+              >
+                <option value="">Select Genre</option>
+                <option value="Action">Action</option>
+                <option value="Drama">Drama</option>
+                <option value="Sci-Fi">Sci-Fi</option>
+                <option value="Crime">Crime</option>
+                <option value="Animation">Animation</option>
+                <option value="Comedy">Comedy</option>
+                <option value="Thriller">Thriller</option>
+              </select>
+              {renderEditError("genre")}
+
+              <div style={{ display: "flex", gap: "10px" }}>
+                <input
+                  name="year"
+                  type="number"
+                  placeholder="Year"
+                  value={editValues.year}
+                  onChange={handleEditChange}
+                  onBlur={handleEditBlur}
+                  required
+                />
+                <input
+                  name="rating"
+                  type="number"
+                  step="0.1"
+                  placeholder="Rating"
+                  value={editValues.rating}
+                  onChange={handleEditChange}
+                  onBlur={handleEditBlur}
+                  required
+                />
+              </div>
+              {renderEditError("year")}
+              {renderEditError("rating")}
+
+              <input
+                name="poster"
+                placeholder="Poster URL"
+                value={editValues.poster}
+                onChange={handleEditChange}
+                onBlur={handleEditBlur}
+                required
+              />
+              {renderEditError("poster")}
+
+              <textarea
+                name="description"
+                placeholder="Description"
+                value={editValues.description}
+                onChange={handleEditChange}
+                onBlur={handleEditBlur}
+                required
+              />
+              {renderEditError("description")}
+
+              {updateError && (
+                <span style={{ color: "red", fontSize: "0.85rem" }}>
+                  {updateError.message}
+                </span>
+              )}
+
+              <button
+                type="submit"
+                disabled={
+                  Object.values(editErrors).some(Boolean) ||
+                  updatingMovieId === editModal.data.id
+                }
+                style={{ background: "var(--accent)", color: "white" }}
+              >
+                {updatingMovieId === editModal.data.id
+                  ? "Updating..."
+                  : "Save changes"}
+              </button>
+              <button type="button" onClick={editModal.close}>
+                Cancel
+              </button>
+            </form>
           </div>
         </div>
       )}
