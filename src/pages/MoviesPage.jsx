@@ -63,6 +63,9 @@ const MoviesPage = () => {
     apiLoading,
     apiError,
     updateError,
+    mutationError,
+    creatingMovie,
+    deletingMovieId,
     updatingMovieId,
     refetchMovies,
   } = useContext(MovieContext);
@@ -108,13 +111,20 @@ const MoviesPage = () => {
     initialValues: INITIAL_FORM_VALUES,
     validate: validateMovie,
     onSubmit: (formValues, { resetForm }) => {
-      addMovie({
+      const payload = {
         ...formValues,
         title: formValues.title.trim(),
         description: formValues.description.trim(),
-      });
-      createModal.close();
-      resetForm();
+      };
+
+      addMovie(payload)
+        .then(() => {
+          createModal.close();
+          resetForm();
+        })
+        .catch(() => {
+          // Error is rendered via context state.
+        });
     },
   });
 
@@ -161,7 +171,9 @@ const MoviesPage = () => {
   };
 
   const getEditFieldError = (fieldName) =>
-    editTouched[fieldName] && editErrors[fieldName] ? editErrors[fieldName] : "";
+    editTouched[fieldName] && editErrors[fieldName]
+      ? editErrors[fieldName]
+      : "";
 
   const renderEditError = (fieldName) => {
     const fieldError = getEditFieldError(fieldName);
@@ -205,6 +217,18 @@ const MoviesPage = () => {
     } catch {
       // Error state is exposed from context and rendered in the modal.
     }
+  };
+
+  const handleDeleteMovie = (id) => {
+    deleteMovie(id)
+      .then(() => {
+        if (detailsModal.data?.id === id) {
+          detailsModal.close();
+        }
+      })
+      .catch(() => {
+        // Error is rendered via context state.
+      });
   };
 
   const getFieldError = (fieldName) =>
@@ -277,6 +301,12 @@ const MoviesPage = () => {
         </div>
       )}
 
+      {mutationError && (
+        <div className="stats" style={{ marginBottom: "24px" }}>
+          <p>{mutationError.message}</p>
+        </div>
+      )}
+
       <div className="movie-grid">
         {paginatedMovies.map((movie) => (
           <MovieCard
@@ -284,7 +314,7 @@ const MoviesPage = () => {
             movie={movie}
             isFavorite={favorites.includes(movie.id)}
             onToggleFav={toggleFavorite}
-            onDelete={deleteMovie}
+            onDelete={handleDeleteMovie}
             onOpen={openDetailsModal}
           />
         ))}
@@ -391,10 +421,10 @@ const MoviesPage = () => {
 
               <button
                 type="submit"
-                disabled={!isValid}
+                disabled={!isValid || creatingMovie}
                 style={{ background: "var(--accent)", color: "white" }}
               >
-                Create
+                {creatingMovie ? "Creating..." : "Create"}
               </button>
               <button type="button" onClick={closeCreateModal}>
                 Cancel
@@ -414,8 +444,20 @@ const MoviesPage = () => {
             </p>
             <p>{detailsModal.data.description}</p>
             <div className="modal-actions">
-              <button className="fav-btn" onClick={() => openEditModal(detailsModal.data)}>
+              <button
+                className="fav-btn"
+                onClick={() => openEditModal(detailsModal.data)}
+              >
                 Edit
+              </button>
+              <button
+                className="fav-btn"
+                onClick={() => handleDeleteMovie(detailsModal.data.id)}
+                disabled={deletingMovieId === detailsModal.data.id}
+              >
+                {deletingMovieId === detailsModal.data.id
+                  ? "Deleting..."
+                  : "Delete"}
               </button>
               <button className="fav-btn" onClick={detailsModal.close}>
                 Close

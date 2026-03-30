@@ -3,6 +3,8 @@ import { MovieContext } from "./MovieContext";
 import { useFetch } from "./hooks/useFetch";
 import {
   DEFAULT_MOVIES,
+  createMovieOnApi,
+  deleteMovieOnApi,
   fetchMoviesFromApi,
   updateMovieOnApi,
 } from "./services/movieApi";
@@ -33,6 +35,9 @@ export const MovieProvider = ({ children }) => {
 
   const [updatingMovieId, setUpdatingMovieId] = useState(null);
   const [updateError, setUpdateError] = useState(null);
+  const [creatingMovie, setCreatingMovie] = useState(false);
+  const [deletingMovieId, setDeletingMovieId] = useState(null);
+  const [mutationError, setMutationError] = useState(null);
 
   const getApiMovies = useCallback(() => fetchMoviesFromApi(), []);
 
@@ -76,31 +81,59 @@ export const MovieProvider = ({ children }) => {
     );
   }, []);
 
-  const addMovie = useCallback((m) => {
-    setLocalMovies((prev) => [
-      ...prev,
-      {
-        ...m,
-        id: Date.now(),
-        year: Number(m.year),
-        rating: Number(m.rating),
-      },
-    ]);
+  const addMovie = useCallback(async (m) => {
+    const normalizedMovie = {
+      ...m,
+      year: Number(m.year),
+      rating: Number(m.rating),
+    };
+
+    setCreatingMovie(true);
+    setMutationError(null);
+
+    try {
+      const createdMovie = await createMovieOnApi(normalizedMovie);
+
+      setLocalMovies((prev) => [...prev, createdMovie]);
+      return createdMovie;
+    } catch (err) {
+      const nextError =
+        err instanceof Error ? err : new Error("Failed to create movie");
+      setMutationError(nextError);
+      throw nextError;
+    } finally {
+      setCreatingMovie(false);
+    }
   }, []);
 
-  const deleteMovie = useCallback((id) => {
-    setLocalMovies((prev) => prev.filter((m) => m.id !== id));
-    setDeletedMovieIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-    setFavorites((prev) => prev.filter((movieId) => movieId !== id));
-    setMovieOverrides((prev) => {
-      if (!prev[id]) {
-        return prev;
-      }
+  const deleteMovie = useCallback(async (id) => {
+    setDeletingMovieId(id);
+    setMutationError(null);
 
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
+    try {
+      await deleteMovieOnApi(id);
+
+      setLocalMovies((prev) => prev.filter((m) => m.id !== id));
+      setDeletedMovieIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      setFavorites((prev) => prev.filter((movieId) => movieId !== id));
+      setMovieOverrides((prev) => {
+        if (!prev[id]) {
+          return prev;
+        }
+
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      return true;
+    } catch (err) {
+      const nextError =
+        err instanceof Error ? err : new Error("Failed to delete movie");
+      setMutationError(nextError);
+      throw nextError;
+    } finally {
+      setDeletingMovieId(null);
+    }
   }, []);
 
   const updateMovie = useCallback(async (movie) => {
@@ -144,7 +177,6 @@ export const MovieProvider = ({ children }) => {
     }
   }, []);
 
-
   const value = useMemo(
     () => ({
       movies,
@@ -152,6 +184,9 @@ export const MovieProvider = ({ children }) => {
       apiLoading,
       apiError,
       updateError,
+      mutationError,
+      creatingMovie,
+      deletingMovieId,
       updatingMovieId,
       toggleFavorite,
       addMovie,
@@ -165,6 +200,9 @@ export const MovieProvider = ({ children }) => {
       apiLoading,
       apiError,
       updateError,
+      mutationError,
+      creatingMovie,
+      deletingMovieId,
       updatingMovieId,
       toggleFavorite,
       addMovie,

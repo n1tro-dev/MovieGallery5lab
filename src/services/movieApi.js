@@ -1,5 +1,7 @@
 const TVMAZE_URL = "https://api.tvmaze.com/shows?page=1";
 const MOVIE_UPDATE_URL = "https://jsonplaceholder.typicode.com/posts";
+const MOVIE_CREATE_URL = "https://jsonplaceholder.typicode.com/posts";
+const MOVIE_DELETE_URL = "https://jsonplaceholder.typicode.com/posts";
 
 export const DEFAULT_MOVIES = [
   {
@@ -133,4 +135,37 @@ export const updateMovieOnApi = async (movieId, moviePayload) => {
     ...moviePayload,
     id: Number(data.id ?? movieId),
   };
+};
+
+export const createMovieOnApi = async (moviePayload) => {
+  const response = await fetch(MOVIE_CREATE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(moviePayload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create movie through API");
+  }
+
+  const data = await response.json();
+
+  return {
+    ...moviePayload,
+    id: Number(data.id ?? Date.now()),
+  };
+};
+
+export const deleteMovieOnApi = async (movieId) => {
+  const response = await fetch(`${MOVIE_DELETE_URL}/${movieId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete movie through API");
+  }
+
+  return true;
 };
