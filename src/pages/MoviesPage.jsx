@@ -1,10 +1,66 @@
-import React, { useContext, useState, useMemo } from "react";
+import React, { useContext, useState } from "react";
 import { MovieContext } from "../MovieContext";
 import MovieCard from "./MovieCard";
+import { useFilter } from "../hooks/useFilter";
+import { useForm } from "../hooks/useForm";
+
+const INITIAL_FORM_VALUES = {
+  title: "",
+  genre: "",
+  rating: "",
+  poster: "",
+  year: "",
+  description: "",
+};
+
+const currentYear = new Date().getFullYear();
+
+const validateMovie = (values) => {
+  const errors = {};
+
+  if (!values.title.trim() || values.title.trim().length < 3) {
+    errors.title = "Название должно быть не короче 3 символов";
+  }
+
+  if (!values.genre) {
+    errors.genre = "Выберите жанр";
+  }
+
+  const rating = Number(values.rating);
+  if (Number.isNaN(rating) || rating < 0 || rating > 10) {
+    errors.rating = "Рейтинг от 0 до 10";
+  }
+
+  const year = Number(values.year);
+  if (Number.isNaN(year) || year < 1895 || year > currentYear) {
+    errors.year = `Год должен быть между 1895 и ${currentYear}`;
+  }
+
+  try {
+    // URL constructor throws for invalid values.
+    new URL(values.poster);
+  } catch {
+    errors.poster = "Введите корректный URL постера";
+  }
+
+  if (!values.description.trim() || values.description.trim().length < 10) {
+    errors.description = "Описание должно быть не короче 10 символов";
+  }
+
+  return errors;
+};
 
 const MoviesPage = () => {
-  const { movies, favorites, toggleFavorite, addMovie, deleteMovie } =
-    useContext(MovieContext);
+  const {
+    movies,
+    favorites,
+    toggleFavorite,
+    addMovie,
+    deleteMovie,
+    apiLoading,
+    apiError,
+    refetchMovies,
+  } = useContext(MovieContext);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("All");
@@ -13,54 +69,56 @@ const MoviesPage = () => {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // (Задача №2, 3, 5)
-  const [newMovie, setNewMovie] = useState({
-    title: "",
-    genre: "",
-    rating: "",
-    poster: "",
-    year: "",
-    description: "",
+  const { filteredMovies, uniqueGenres } = useFilter(movies, {
+    searchTerm,
+    selectedGenre,
+    sortBy,
   });
-  const [errors, setErrors] = useState({});
 
-  // (Задача №5)
-  const validate = (name, value) => {
-    let error = "";
-    if (name === "title" && value.length < 3)
-      error = "Название слишком короткое";
-    if (name === "rating" && (value < 0 || value > 10))
-      error = "Рейтинг от 0 до 10";
-    if (name === "year" && (value < 1895 || value > 2026))
-      error = "Некорректный год";
-    setErrors((prev) => ({ ...prev, [name]: error }));
+  const {
+    values,
+    errors,
+    touched,
+    isValid,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+  } = useForm({
+    initialValues: INITIAL_FORM_VALUES,
+    validate: validateMovie,
+    onSubmit: (formValues, { resetForm }) => {
+      addMovie({
+        ...formValues,
+        title: formValues.title.trim(),
+        description: formValues.description.trim(),
+      });
+      setIsAddModalOpen(false);
+      resetForm();
+    },
+  });
+
+  const openCreateModal = () => {
+    setIsAddModalOpen(true);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNewMovie((prev) => ({ ...prev, [name]: value }));
-    validate(name, value);
+  const closeCreateModal = () => {
+    setIsAddModalOpen(false);
   };
 
-  // (Задача №8)
-  const filteredMovies = useMemo(() => {
-    return movies
-      .filter(
-        (m) =>
-          (selectedGenre === "All" || m.genre === selectedGenre) &&
-          m.title.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-      .sort((a, b) =>
-        sortBy === "rating"
-          ? b.rating - a.rating
-          : a.title.localeCompare(b.title),
-      );
-  }, [movies, searchTerm, selectedGenre, sortBy]);
+  const getFieldError = (fieldName) =>
+    touched[fieldName] && errors[fieldName] ? errors[fieldName] : "";
 
-  const uniqueGenres = useMemo(
-    () => ["All", ...new Set(movies.map((m) => m.genre))],
-    [movies],
-  );
+  const renderError = (fieldName) => {
+    const fieldError = getFieldError(fieldName);
+
+    if (!fieldError) {
+      return null;
+    }
+
+    return (
+      <span style={{ color: "red", fontSize: "0.8rem" }}>{fieldError}</span>
+    );
+  };
 
   return (
     <div className="page">
@@ -70,6 +128,7 @@ const MoviesPage = () => {
         <input
           type="text"
           placeholder="Search movies..."
+          value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <select
@@ -82,17 +141,27 @@ const MoviesPage = () => {
             </option>
           ))}
         </select>
-        <select onChange={(e) => setSortBy(e.target.value)}>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
           <option value="title">Sort by Name</option>
           <option value="rating">Sort by Rating</option>
+          <option value="year">Sort by Year</option>
         </select>
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={openCreateModal}
           style={{ background: "var(--accent)", color: "white" }}
         >
           + Add New
         </button>
       </div>
+
+      {apiLoading && <p>Loading movies from API...</p>}
+
+      {apiError && (
+        <div className="stats" style={{ marginBottom: "24px" }}>
+          <p>Could not refresh movies from API. Showing cached/local data.</p>
+          <button onClick={refetchMovies}>Try again</button>
+        </div>
+      )}
 
       <div className="movie-grid">
         {filteredMovies.map((movie) => (
@@ -107,79 +176,91 @@ const MoviesPage = () => {
         ))}
       </div>
 
-      {/* МОДАЛКА ДОБАВЛЕНИЯ (Задача №1, 3, 6) */}
       {isAddModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
+        <div className="modal-overlay" onClick={closeCreateModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <form
-              className="add-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!errors.title && newMovie.title) {
-                  addMovie(newMovie);
-                  setIsAddModalOpen(false);
-                }
-              }}
-            >
+            <form className="add-form" onSubmit={handleSubmit}>
               <h2>New Movie</h2>
               <input
                 name="title"
                 placeholder="Title"
-                value={newMovie.title}
+                value={values.title}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 required
               />
-              {errors.title && (
-                <span style={{ color: "red", fontSize: "0.8rem" }}>
-                  {errors.title}
-                </span>
-              )}
+              {renderError("title")}
 
               <select
                 name="genre"
-                value={newMovie.genre}
+                value={values.genre}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 required
               >
                 <option value="">Select Genre</option>
                 <option value="Action">Action</option>
                 <option value="Drama">Drama</option>
                 <option value="Sci-Fi">Sci-Fi</option>
+                <option value="Crime">Crime</option>
+                <option value="Animation">Animation</option>
+                <option value="Comedy">Comedy</option>
+                <option value="Thriller">Thriller</option>
               </select>
+              {renderError("genre")}
 
               <div style={{ display: "flex", gap: "10px" }}>
                 <input
                   name="year"
                   type="number"
                   placeholder="Year"
+                  value={values.year}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  required
                 />
                 <input
                   name="rating"
                   type="number"
                   step="0.1"
                   placeholder="Rating"
+                  value={values.rating}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  required
                 />
               </div>
+              {renderError("year")}
+              {renderError("rating")}
+
               <input
                 name="poster"
                 placeholder="Poster URL"
+                value={values.poster}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                required
               />
+              {renderError("poster")}
+
               <textarea
                 name="description"
                 placeholder="Description"
+                value={values.description}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                required
               />
+              {renderError("description")}
 
               <button
                 type="submit"
+                disabled={!isValid}
                 style={{ background: "var(--accent)", color: "white" }}
               >
                 Create
               </button>
-              <button type="button" onClick={() => setIsAddModalOpen(false)}>
+              <button type="button" onClick={closeCreateModal}>
                 Cancel
               </button>
             </form>
@@ -187,11 +268,10 @@ const MoviesPage = () => {
         </div>
       )}
 
-      {/* МОДАЛКА ДЕТАЛЕЙ */}
       {selectedMovie && (
         <div className="modal-overlay" onClick={() => setSelectedMovie(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <img src={selectedMovie.poster} alt="" />
+            <img src={selectedMovie.poster} alt={selectedMovie.title} />
             <h2>{selectedMovie.title}</h2>
             <p>
               ⭐ {selectedMovie.rating} | {selectedMovie.genre}
