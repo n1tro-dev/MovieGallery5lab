@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { MovieContext } from "../../MovieContext";
 import MoviesPage from "../MoviesPage";
@@ -33,9 +34,11 @@ const renderWithContext = (overrides = {}) => {
   };
 
   render(
-    <MovieContext.Provider value={value}>
-      <MoviesPage />
-    </MovieContext.Provider>,
+    <MemoryRouter>
+      <MovieContext.Provider value={value}>
+        <MoviesPage />
+      </MovieContext.Provider>
+    </MemoryRouter>,
   );
 
   return value;

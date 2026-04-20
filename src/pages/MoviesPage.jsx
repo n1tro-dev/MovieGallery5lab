@@ -1,4 +1,5 @@
 import React, { useContext, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MovieContext } from "../MovieContext";
 import MovieCard from "./MovieCard";
 import { useFilter } from "../hooks/useFilter";
@@ -39,7 +40,6 @@ const validateMovie = (values) => {
   }
 
   try {
-    // URL constructor throws for invalid values.
     new URL(values.poster);
   } catch {
     errors.poster = "Введите корректный URL постера";
@@ -69,6 +69,7 @@ const MoviesPage = () => {
     updatingMovieId,
     refetchMovies,
   } = useContext(MovieContext);
+  const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("All");
@@ -123,7 +124,6 @@ const MoviesPage = () => {
           resetForm();
         })
         .catch(() => {
-          // Error is rendered via context state.
         });
     },
   });
@@ -458,6 +458,12 @@ const MoviesPage = () => {
                 {deletingMovieId === detailsModal.data.id
                   ? "Deleting..."
                   : "Delete"}
+              </button>
+              <button
+                className="fav-btn"
+                onClick={() => navigate(`/movies/${detailsModal.data.id}`)}
+              >
+                Open page
               </button>
               <button className="fav-btn" onClick={detailsModal.close}>
                 Close

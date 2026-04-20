@@ -1,11 +1,16 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import { MovieProvider } from "./MovieProvider";
+import withAuthProtection from "./hoc/withAuthProtection";
 
 const Home = lazy(() => import("./pages/Home"));
 const MoviesPage = lazy(() => import("./pages/MoviesPage"));
 const Profile = lazy(() => import("./pages/Profile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const RatingsPage = lazy(() => import("./pages/RatingsPage"));
+const MovieDetailsPage = lazy(() => import("./pages/MovieDetailsPage"));
+
+const ProtectedRatingsPage = withAuthProtection(RatingsPage);
 
 function App() {
   return (
@@ -30,6 +35,12 @@ function App() {
           >
             Profile
           </NavLink>
+          <NavLink
+            to="/ratings"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            Ratings
+          </NavLink>
         </nav>
 
         <Suspense
@@ -42,7 +53,9 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/movies" element={<MoviesPage />} />
+            <Route path="/movies/:id" element={<MovieDetailsPage />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/ratings" element={<ProtectedRatingsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

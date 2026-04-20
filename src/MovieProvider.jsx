@@ -23,6 +23,11 @@ export const MovieProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const saved = localStorage.getItem("my_is_authenticated");
+    return saved ? JSON.parse(saved) : false;
+  });
+
   const [deletedMovieIds, setDeletedMovieIds] = useState(() => {
     const saved = localStorage.getItem("my_deleted_movies");
     return saved ? JSON.parse(saved) : [];
@@ -66,6 +71,13 @@ export const MovieProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem("my_favorites", JSON.stringify(favorites));
   }, [favorites]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "my_is_authenticated",
+      JSON.stringify(isAuthenticated),
+    );
+  }, [isAuthenticated]);
 
   useEffect(() => {
     localStorage.setItem("my_deleted_movies", JSON.stringify(deletedMovieIds));
@@ -177,10 +189,19 @@ export const MovieProvider = ({ children }) => {
     }
   }, []);
 
+  const login = useCallback(() => {
+    setIsAuthenticated(true);
+  }, []);
+
+  const logout = useCallback(() => {
+    setIsAuthenticated(false);
+  }, []);
+
   const value = useMemo(
     () => ({
       movies,
       favorites,
+      isAuthenticated,
       apiLoading,
       apiError,
       updateError,
@@ -192,11 +213,14 @@ export const MovieProvider = ({ children }) => {
       addMovie,
       deleteMovie,
       updateMovie,
+      login,
+      logout,
       refetchMovies,
     }),
     [
       movies,
       favorites,
+      isAuthenticated,
       apiLoading,
       apiError,
       updateError,
@@ -208,6 +232,8 @@ export const MovieProvider = ({ children }) => {
       addMovie,
       deleteMovie,
       updateMovie,
+      login,
+      logout,
       refetchMovies,
     ],
   );
