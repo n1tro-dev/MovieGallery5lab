@@ -172,6 +172,28 @@ body {
   align-items: stretch;
 }
 
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--bg-card);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 /* Карточка */
 .card {
@@ -236,7 +258,9 @@ body {
   background: var(--overlay);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding: 24px 12px calc(24px + env(safe-area-inset-bottom));
+  overflow-y: auto;
   z-index: 1000;
 }
 
@@ -248,8 +272,12 @@ body {
   border-radius: 15px;
   max-width: 500px;
   width: 90%;
+  max-height: calc(100dvh - 48px - env(safe-area-inset-bottom));
   border: 1px solid var(--accent);
   text-align: left;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding-bottom: calc(30px + env(safe-area-inset-bottom));
 }
 
 .modal-content img {
@@ -260,6 +288,13 @@ body {
   border-radius: 10px;
   margin-bottom: 15px;
   display: block;   
+}
+
+.modal-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  padding-top: 8px;
 }
 
 .fav-btn {

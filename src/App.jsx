@@ -12,12 +12,33 @@ function App() {
     <MovieProvider>
       <BrowserRouter>
         <nav className="navbar">
-          <NavLink to="/" className={({ isActive }) => isActive ? "active" : ""}>Home</NavLink>
-          <NavLink to="/movies" className={({ isActive }) => isActive ? "active" : ""}>Gallery</NavLink>
-          <NavLink to="/profile" className={({ isActive }) => isActive ? "active" : ""}>Profile</NavLink>
+          <NavLink
+            to="/"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            Home
+          </NavLink>
+          <NavLink
+            to="/movies"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            Gallery
+          </NavLink>
+          <NavLink
+            to="/profile"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            Profile
+          </NavLink>
         </nav>
 
-        <Suspense fallback={<div style={{color: "var(--accent)", textAlign: "center"}}>Loading...</div>}>
+        <Suspense
+          fallback={
+            <div style={{ color: "var(--accent)", textAlign: "center" }}>
+              Loading...
+            </div>
+          }
+        >
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/movies" element={<MoviesPage />} />
