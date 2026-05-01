@@ -481,103 +481,111 @@ const MoviesPage = () => {
             aria-modal="true"
             aria-labelledby="create-movie-title"
           >
-            <form className="add-form" onSubmit={handleSubmit}>
-              <h2 id="create-movie-title">New Movie</h2>
-              <input
-                name="title"
-                placeholder="Title"
-                value={values.title}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                required
-              />
-              {renderError("title")}
-
-              <input
-                name="genre"
-                placeholder="Genre"
-                list="genre-options"
-                value={values.genre}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                required
-              />
-              {renderError("genre")}
-
-              <div className="form-row">
+            <div className="modal-scroll">
+              <form className="add-form" onSubmit={handleSubmit}>
+                <h2 id="create-movie-title">New Movie</h2>
                 <input
-                  name="year"
-                  type="number"
-                  placeholder="Year"
-                  value={values.year}
+                  name="title"
+                  placeholder="Title"
+                  value={values.title}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
                 />
+                {renderError("title")}
+
                 <input
-                  name="rating"
-                  type="number"
-                  step="0.1"
-                  placeholder="Rating"
-                  value={values.rating}
+                  name="genre"
+                  placeholder="Genre"
+                  list="genre-options"
+                  value={values.genre}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
                 />
-              </div>
-              {renderError("year")}
-              {renderError("rating")}
+                {renderError("genre")}
 
-              <input
-                name="poster"
-                placeholder="Poster URL"
-                ref={createPosterRef}
-                value={createRefValues.poster}
-                onChange={(event) =>
-                  setCreateRefValues((prev) => ({
-                    ...prev,
-                    poster: event.target.value,
-                  }))
-                }
-                onBlur={() =>
-                  setCreateRefTouched((prev) => ({ ...prev, poster: true }))
-                }
-                required
-              />
-              {renderError("poster")}
+                <div className="form-row">
+                  <input
+                    name="year"
+                    type="number"
+                    placeholder="Year"
+                    value={values.year}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    required
+                  />
+                  <input
+                    name="rating"
+                    type="number"
+                    step="0.1"
+                    placeholder="Rating"
+                    value={values.rating}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    required
+                  />
+                </div>
+                {renderError("year")}
+                {renderError("rating")}
 
-              <textarea
-                name="description"
-                placeholder="Description"
-                ref={createDescriptionRef}
-                value={createRefValues.description}
-                onChange={(event) =>
-                  setCreateRefValues((prev) => ({
-                    ...prev,
-                    description: event.target.value,
-                  }))
-                }
-                onBlur={() =>
-                  setCreateRefTouched((prev) => ({
-                    ...prev,
-                    description: true,
-                  }))
-                }
-                required
-              />
-              {renderError("description")}
+                <input
+                  name="poster"
+                  placeholder="Poster URL"
+                  ref={createPosterRef}
+                  value={createRefValues.poster}
+                  onChange={(event) =>
+                    setCreateRefValues((prev) => ({
+                      ...prev,
+                      poster: event.target.value,
+                    }))
+                  }
+                  onBlur={() =>
+                    setCreateRefTouched((prev) => ({ ...prev, poster: true }))
+                  }
+                  required
+                />
+                {renderError("poster")}
 
-              <button
-                type="submit"
-                disabled={!isCreateFormValid || creatingMovie}
-                style={{ background: "var(--accent)", color: "white" }}
-              >
-                {creatingMovie ? "Creating..." : "Create"}
-              </button>
-              <button type="button" onClick={closeCreateModal}>
-                Cancel
-              </button>
-            </form>
+                <textarea
+                  name="description"
+                  placeholder="Description"
+                  ref={createDescriptionRef}
+                  value={createRefValues.description}
+                  onChange={(event) =>
+                    setCreateRefValues((prev) => ({
+                      ...prev,
+                      description: event.target.value,
+                    }))
+                  }
+                  onBlur={() =>
+                    setCreateRefTouched((prev) => ({
+                      ...prev,
+                      description: true,
+                    }))
+                  }
+                  required
+                />
+                {renderError("description")}
+
+                <div className="modal-actions">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={!isCreateFormValid || creatingMovie}
+                  >
+                    {creatingMovie ? "Creating..." : "Create"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={closeCreateModal}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -591,37 +599,42 @@ const MoviesPage = () => {
             aria-modal="true"
             aria-labelledby="details-movie-title"
           >
-            <img src={detailsModal.data.poster} alt={detailsModal.data.title} />
-            <h2 id="details-movie-title">{detailsModal.data.title}</h2>
-            <p>
-              ⭐ {detailsModal.data.rating} | {detailsModal.data.genre}
-            </p>
-            <p>{detailsModal.data.description}</p>
-            <div className="modal-actions">
-              <button
-                className="fav-btn"
-                onClick={() => openEditModal(detailsModal.data)}
-              >
-                Edit
-              </button>
-              <button
-                className="fav-btn"
-                onClick={() => handleDeleteMovie(detailsModal.data.id)}
-                disabled={deletingMovieId === detailsModal.data.id}
-              >
-                {deletingMovieId === detailsModal.data.id
-                  ? "Deleting..."
-                  : "Delete"}
-              </button>
-              <button
-                className="fav-btn"
-                onClick={() => navigate(`/movies/${detailsModal.data.id}`)}
-              >
-                Open page
-              </button>
-              <button className="fav-btn" onClick={detailsModal.close}>
-                Close
-              </button>
+            <div className="modal-scroll">
+              <img
+                src={detailsModal.data.poster}
+                alt={detailsModal.data.title}
+              />
+              <h2 id="details-movie-title">{detailsModal.data.title}</h2>
+              <p>
+                ⭐ {detailsModal.data.rating} | {detailsModal.data.genre}
+              </p>
+              <p>{detailsModal.data.description}</p>
+              <div className="modal-actions">
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => openEditModal(detailsModal.data)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => handleDeleteMovie(detailsModal.data.id)}
+                  disabled={deletingMovieId === detailsModal.data.id}
+                >
+                  {deletingMovieId === detailsModal.data.id
+                    ? "Deleting..."
+                    : "Delete"}
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => navigate(`/movies/${detailsModal.data.id}`)}
+                >
+                  Open page
+                </button>
+                <button className="btn btn-ghost" onClick={detailsModal.close}>
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -636,96 +649,104 @@ const MoviesPage = () => {
             aria-modal="true"
             aria-labelledby="edit-movie-title"
           >
-            <form className="add-form" onSubmit={handleEditSubmit}>
-              <h2 id="edit-movie-title">Edit Movie</h2>
+            <div className="modal-scroll">
+              <form className="add-form" onSubmit={handleEditSubmit}>
+                <h2 id="edit-movie-title">Edit Movie</h2>
 
-              <input
-                name="title"
-                placeholder="Title"
-                value={editValues.title}
-                onChange={handleEditChange}
-                onBlur={handleEditBlur}
-                required
-              />
-              {renderEditError("title")}
-
-              <input
-                name="genre"
-                placeholder="Genre"
-                list="genre-options"
-                value={editValues.genre}
-                onChange={handleEditChange}
-                onBlur={handleEditBlur}
-                required
-              />
-              {renderEditError("genre")}
-
-              <div className="form-row">
                 <input
-                  name="year"
-                  type="number"
-                  placeholder="Year"
-                  value={editValues.year}
+                  name="title"
+                  placeholder="Title"
+                  value={editValues.title}
                   onChange={handleEditChange}
                   onBlur={handleEditBlur}
                   required
                 />
+                {renderEditError("title")}
+
                 <input
-                  name="rating"
-                  type="number"
-                  step="0.1"
-                  placeholder="Rating"
-                  value={editValues.rating}
+                  name="genre"
+                  placeholder="Genre"
+                  list="genre-options"
+                  value={editValues.genre}
                   onChange={handleEditChange}
                   onBlur={handleEditBlur}
                   required
                 />
-              </div>
-              {renderEditError("year")}
-              {renderEditError("rating")}
+                {renderEditError("genre")}
 
-              <input
-                name="poster"
-                placeholder="Poster URL"
-                value={editValues.poster}
-                onChange={handleEditChange}
-                onBlur={handleEditBlur}
-                required
-              />
-              {renderEditError("poster")}
+                <div className="form-row">
+                  <input
+                    name="year"
+                    type="number"
+                    placeholder="Year"
+                    value={editValues.year}
+                    onChange={handleEditChange}
+                    onBlur={handleEditBlur}
+                    required
+                  />
+                  <input
+                    name="rating"
+                    type="number"
+                    step="0.1"
+                    placeholder="Rating"
+                    value={editValues.rating}
+                    onChange={handleEditChange}
+                    onBlur={handleEditBlur}
+                    required
+                  />
+                </div>
+                {renderEditError("year")}
+                {renderEditError("rating")}
 
-              <textarea
-                name="description"
-                placeholder="Description"
-                value={editValues.description}
-                onChange={handleEditChange}
-                onBlur={handleEditBlur}
-                required
-              />
-              {renderEditError("description")}
+                <input
+                  name="poster"
+                  placeholder="Poster URL"
+                  value={editValues.poster}
+                  onChange={handleEditChange}
+                  onBlur={handleEditBlur}
+                  required
+                />
+                {renderEditError("poster")}
 
-              {updateError && (
-                <span style={{ color: "red", fontSize: "0.85rem" }}>
-                  {updateError.message}
-                </span>
-              )}
+                <textarea
+                  name="description"
+                  placeholder="Description"
+                  value={editValues.description}
+                  onChange={handleEditChange}
+                  onBlur={handleEditBlur}
+                  required
+                />
+                {renderEditError("description")}
 
-              <button
-                type="submit"
-                disabled={
-                  Object.values(editErrors).some(Boolean) ||
-                  updatingMovieId === editModal.data.id
-                }
-                style={{ background: "var(--accent)", color: "white" }}
-              >
-                {updatingMovieId === editModal.data.id
-                  ? "Updating..."
-                  : "Save changes"}
-              </button>
-              <button type="button" onClick={editModal.close}>
-                Cancel
-              </button>
-            </form>
+                {updateError && (
+                  <span style={{ color: "red", fontSize: "0.85rem" }}>
+                    {updateError.message}
+                  </span>
+                )}
+
+                <div className="modal-actions">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={
+                      Object.values(editErrors).some(Boolean) ||
+                      updatingMovieId === editModal.data.id
+                    }
+                  >
+                    {updatingMovieId === editModal.data.id
+                      ? "Updating..."
+                      : "Save changes"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={editModal.close}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

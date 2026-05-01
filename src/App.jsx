@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useState } from "react";
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import { MovieProvider } from "./MovieProvider";
 import withAuthProtection from "./hoc/withAuthProtection";
@@ -13,34 +13,61 @@ const MovieDetailsPage = lazy(() => import("./pages/MovieDetailsPage"));
 const ProtectedRatingsPage = withAuthProtection(RatingsPage);
 
 function App() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen((prev) => !prev);
+  };
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
   return (
     <MovieProvider>
       <BrowserRouter>
-        <nav className="navbar">
-          <NavLink
-            to="/"
-            className={({ isActive }) => (isActive ? "active" : "")}
+        <nav className={`navbar ${isMenuOpen ? "is-open" : ""}`}>
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-label="Toggle navigation"
+            aria-expanded={isMenuOpen}
+            onClick={toggleMenu}
           >
-            Home
-          </NavLink>
-          <NavLink
-            to="/movies"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            Gallery
-          </NavLink>
-          <NavLink
-            to="/profile"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            Profile
-          </NavLink>
-          <NavLink
-            to="/ratings"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            Ratings
-          </NavLink>
+            <span />
+            <span />
+            <span />
+          </button>
+          <div className="nav-links">
+            <NavLink
+              to="/"
+              onClick={closeMenu}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              Home
+            </NavLink>
+            <NavLink
+              to="/movies"
+              onClick={closeMenu}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              Gallery
+            </NavLink>
+            <NavLink
+              to="/profile"
+              onClick={closeMenu}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              Profile
+            </NavLink>
+            <NavLink
+              to="/ratings"
+              onClick={closeMenu}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              Ratings
+            </NavLink>
+          </div>
         </nav>
 
         <Suspense
