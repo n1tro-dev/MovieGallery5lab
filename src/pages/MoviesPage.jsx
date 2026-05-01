@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MovieContext } from "../MovieContext";
 import MovieCard from "./MovieCard";
@@ -6,7 +6,14 @@ import { useFilter } from "../hooks/useFilter";
 import { useForm } from "../hooks/useForm";
 import { useModal } from "../hooks/useModal";
 
-const INITIAL_FORM_VALUES = {
+const INITIAL_CREATE_FORM_VALUES = {
+  title: "",
+  genre: "",
+  rating: "",
+  year: "",
+};
+
+const INITIAL_EDIT_FORM_VALUES = {
   title: "",
   genre: "",
   rating: "",
@@ -68,20 +75,49 @@ const MoviesPage = () => {
     deletingMovieId,
     updatingMovieId,
     refetchMovies,
+    searchTerm: searchTermFromContext,
+    selectedGenre: selectedGenreFromContext,
+    sortBy: sortByFromContext,
+    currentPage: currentPageFromContext,
+    setSearchTerm: setSearchTermFromContext,
+    setSelectedGenre: setSelectedGenreFromContext,
+    setSortBy: setSortByFromContext,
+    setCurrentPage: setCurrentPageFromContext,
+    notification,
+    clearNotification,
   } = useContext(MovieContext);
   const navigate = useNavigate();
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState("All");
-  const [sortBy, setSortBy] = useState("title");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [fallbackSearchTerm, setFallbackSearchTerm] = useState("");
+  const [fallbackSelectedGenre, setFallbackSelectedGenre] = useState("All");
+  const [fallbackSortBy, setFallbackSortBy] = useState("title");
+  const [fallbackCurrentPage, setFallbackCurrentPage] = useState(1);
+
+  const searchTerm = searchTermFromContext ?? fallbackSearchTerm;
+  const selectedGenre = selectedGenreFromContext ?? fallbackSelectedGenre;
+  const sortBy = sortByFromContext ?? fallbackSortBy;
+  const currentPage = currentPageFromContext ?? fallbackCurrentPage;
+
+  const setSearchTerm = setSearchTermFromContext ?? setFallbackSearchTerm;
+  const setSelectedGenre =
+    setSelectedGenreFromContext ?? setFallbackSelectedGenre;
+  const setSortBy = setSortByFromContext ?? setFallbackSortBy;
+  const setCurrentPage = setCurrentPageFromContext ?? setFallbackCurrentPage;
 
   const createModal = useModal();
   const detailsModal = useModal();
   const editModal = useModal();
 
-  const [editValues, setEditValues] = useState(INITIAL_FORM_VALUES);
+  const [editValues, setEditValues] = useState(INITIAL_EDIT_FORM_VALUES);
   const [editTouched, setEditTouched] = useState({});
+
+  const createPosterRef = useRef(null);
+  const createDescriptionRef = useRef(null);
+  const [createRefTouched, setCreateRefTouched] = useState({});
+  const [createRefValues, setCreateRefValues] = useState({
+    poster: "",
+    description: "",
+  });
 
   const { filteredMovies, uniqueGenres } = useFilter(movies, {
     searchTerm,
@@ -100,33 +136,56 @@ const MoviesPage = () => {
     return filteredMovies.slice(startIndex, startIndex + MOVIES_PER_PAGE);
   }, [filteredMovies, safeCurrentPage]);
 
-  const {
-    values,
-    errors,
-    touched,
-    isValid,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-  } = useForm({
-    initialValues: INITIAL_FORM_VALUES,
-    validate: validateMovie,
-    onSubmit: (formValues, { resetForm }) => {
-      const payload = {
-        ...formValues,
-        title: formValues.title.trim(),
-        description: formValues.description.trim(),
-      };
+  const { values, touched, handleChange, handleBlur, handleSubmit, resetForm } =
+    useForm({
+      initialValues: INITIAL_CREATE_FORM_VALUES,
+      validate: (formValues) =>
+        validateMovie({
+          ...formValues,
+          poster: createRefValues.poster,
+          description: createRefValues.description,
+        }),
+      onSubmit: (formValues, { resetForm }) => {
+        const fullFormValues = {
+          ...formValues,
+          poster: createRefValues.poster,
+          description: createRefValues.description,
+        };
 
-      addMovie(payload)
-        .then(() => {
-          createModal.close();
-          resetForm();
-        })
-        .catch(() => {
-        });
-    },
-  });
+        const payload = {
+          ...fullFormValues,
+          title: fullFormValues.title.trim(),
+          description: fullFormValues.description.trim(),
+        };
+
+        addMovie(payload)
+          .then(() => {
+            createModal.close();
+            resetForm();
+            if (createPosterRef.current) {
+              createPosterRef.current.value = "";
+            }
+            if (createDescriptionRef.current) {
+              createDescriptionRef.current.value = "";
+            }
+            setCreateRefValues({ poster: "", description: "" });
+            setCreateRefTouched({});
+          })
+          .catch(() => {});
+      },
+    });
+
+  const createErrors = useMemo(
+    () =>
+      validateMovie({
+        ...values,
+        poster: createRefValues.poster,
+        description: createRefValues.description,
+      }),
+    [values, createRefValues],
+  );
+
+  const isCreateFormValid = !Object.values(createErrors).some(Boolean);
 
   const editErrors = useMemo(() => validateMovie(editValues), [editValues]);
 
@@ -136,6 +195,15 @@ const MoviesPage = () => {
 
   const closeCreateModal = () => {
     createModal.close();
+    resetForm();
+    setCreateRefValues({ poster: "", description: "" });
+    setCreateRefTouched({});
+    if (createPosterRef.current) {
+      createPosterRef.current.value = "";
+    }
+    if (createDescriptionRef.current) {
+      createDescriptionRef.current.value = "";
+    }
   };
 
   const openDetailsModal = (movie) => {
@@ -231,8 +299,14 @@ const MoviesPage = () => {
       });
   };
 
-  const getFieldError = (fieldName) =>
-    touched[fieldName] && errors[fieldName] ? errors[fieldName] : "";
+  const getFieldError = (fieldName) => {
+    const isTouched =
+      fieldName === "poster" || fieldName === "description"
+        ? createRefTouched[fieldName]
+        : touched[fieldName];
+
+    return isTouched && createErrors[fieldName] ? createErrors[fieldName] : "";
+  };
 
   const renderError = (fieldName) => {
     const fieldError = getFieldError(fieldName);
@@ -304,6 +378,25 @@ const MoviesPage = () => {
       {mutationError && (
         <div className="stats" style={{ marginBottom: "24px" }}>
           <p>{mutationError.message}</p>
+        </div>
+      )}
+
+      {notification && (
+        <div
+          className="stats"
+          style={{
+            marginBottom: "24px",
+            border: `1px solid ${
+              notification.type === "error" ? "#dc2626" : "#16a34a"
+            }`,
+          }}
+        >
+          <p>{notification.message}</p>
+          {clearNotification && (
+            <button type="button" onClick={clearNotification}>
+              Hide
+            </button>
+          )}
         </div>
       )}
 
@@ -402,9 +495,17 @@ const MoviesPage = () => {
               <input
                 name="poster"
                 placeholder="Poster URL"
-                value={values.poster}
-                onChange={handleChange}
-                onBlur={handleBlur}
+                ref={createPosterRef}
+                value={createRefValues.poster}
+                onChange={(event) =>
+                  setCreateRefValues((prev) => ({
+                    ...prev,
+                    poster: event.target.value,
+                  }))
+                }
+                onBlur={() =>
+                  setCreateRefTouched((prev) => ({ ...prev, poster: true }))
+                }
                 required
               />
               {renderError("poster")}
@@ -412,16 +513,27 @@ const MoviesPage = () => {
               <textarea
                 name="description"
                 placeholder="Description"
-                value={values.description}
-                onChange={handleChange}
-                onBlur={handleBlur}
+                ref={createDescriptionRef}
+                value={createRefValues.description}
+                onChange={(event) =>
+                  setCreateRefValues((prev) => ({
+                    ...prev,
+                    description: event.target.value,
+                  }))
+                }
+                onBlur={() =>
+                  setCreateRefTouched((prev) => ({
+                    ...prev,
+                    description: true,
+                  }))
+                }
                 required
               />
               {renderError("description")}
 
               <button
                 type="submit"
-                disabled={!isValid || creatingMovie}
+                disabled={!isCreateFormValid || creatingMovie}
                 style={{ background: "var(--accent)", color: "white" }}
               >
                 {creatingMovie ? "Creating..." : "Create"}

@@ -4,12 +4,12 @@
   --bg-app: #242424;
   --bg-card: #1a1a1a;
   --text-main: rgba(255, 255, 255, 0.87);
-  --accent: #646cff;
+  --accent: #0f766e;
   --border: #444;
   --overlay: rgba(0, 0, 0, 0.8);
 
 
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", "Trebuchet MS", Tahoma, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
@@ -34,7 +34,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: var(--bg-app);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(15, 118, 110, 0.18), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(56, 189, 248, 0.16), transparent 30%),
+    var(--bg-app);
   color: var(--text-main);
 }
 
@@ -70,9 +73,11 @@ body {
   justify-content: center;
   gap: 20px;
   padding: 20px;
-  background: var(--bg-card);
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  backdrop-filter: blur(6px);
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border);
+  border-radius: 14px;
 }
 
 
@@ -198,11 +203,11 @@ body {
 /* Карточка */
 .card {
   background-color: var(--bg-card);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 15px;
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
   display: flex;
   flex-direction: column;
 }
@@ -236,6 +241,7 @@ body {
 .card:hover {
   transform: translateY(-5px);
   border-color: var(--accent);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
 }
 
 

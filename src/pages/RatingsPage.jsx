@@ -1,8 +1,10 @@
-import React, { useContext } from "react";
+import React, { Suspense, lazy, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import MovieListRenderProps from "../components/MovieListRenderProps";
-import CompoundMovieCard from "../components/CompoundMovieCard";
 import { MovieContext } from "../MovieContext";
+
+const LazyRatingsContent = lazy(
+  () => import("../components/LazyRatingsContent"),
+);
 
 const RatingsPage = () => {
   const { movies } = useContext(MovieContext);
@@ -11,22 +13,12 @@ const RatingsPage = () => {
   return (
     <div className="page">
       <h1>Top Ratings</h1>
-
-      <MovieListRenderProps items={movies}>
-        {({ items }) => (
-          <div className="movie-grid">
-            {items.map((movie) => (
-              <CompoundMovieCard key={movie.id} movie={movie}>
-                <CompoundMovieCard.Header />
-                <CompoundMovieCard.Body />
-                <CompoundMovieCard.Footer
-                  onOpenDetails={(movieId) => navigate(`/movies/${movieId}`)}
-                />
-              </CompoundMovieCard>
-            ))}
-          </div>
-        )}
-      </MovieListRenderProps>
+      <Suspense fallback={<p>Loading ratings...</p>}>
+        <LazyRatingsContent
+          movies={movies}
+          onOpenDetails={(movieId) => navigate(`/movies/${movieId}`)}
+        />
+      </Suspense>
     </div>
   );
 };
