@@ -364,6 +364,8 @@ const MoviesPage = () => {
       <div className="controls">
         <input
           type="text"
+          id="movie-search"
+          name="movieSearch"
           placeholder="Search movies..."
           value={searchTerm}
           onChange={(e) => {
@@ -372,6 +374,8 @@ const MoviesPage = () => {
           }}
         />
         <select
+          id="movie-genre-filter"
+          name="movieGenre"
           value={selectedGenre}
           onChange={(e) => {
             setSelectedGenre(e.target.value);
@@ -385,6 +389,8 @@ const MoviesPage = () => {
           ))}
         </select>
         <select
+          id="movie-sort-by"
+          name="movieSortBy"
           value={sortBy}
           onChange={(e) => {
             setSortBy(e.target.value);

@@ -37,11 +37,15 @@ const MovieListRenderProps = ({ items, children }) => {
       <div className="controls">
         <input
           type="text"
+          id="ratings-search"
+          name="ratingsSearch"
           placeholder="Search by title or genre..."
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
         />
         <select
+          id="ratings-genre"
+          name="ratingsGenre"
           value={selectedGenre}
           onChange={(event) => setSelectedGenre(event.target.value)}
         >
@@ -52,6 +56,8 @@ const MovieListRenderProps = ({ items, children }) => {
           ))}
         </select>
         <select
+          id="ratings-sort"
+          name="ratingsSort"
           value={sortBy}
           onChange={(event) => setSortBy(event.target.value)}
         >

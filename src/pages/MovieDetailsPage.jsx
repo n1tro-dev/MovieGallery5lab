@@ -34,7 +34,9 @@ const MovieDetailsPage = () => {
         <strong>Rating:</strong> {movie.rating}
       </p>
       <p>{movie.description}</p>
-      <Link to="/movies">Back to gallery</Link>
+      <Link to="/movies" className="btn btn-ghost btn-link">
+        Back to gallery
+      </Link>
     </div>
   );
 };
