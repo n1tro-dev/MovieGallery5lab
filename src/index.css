@@ -94,6 +94,23 @@ body {
   border-bottom: 2px solid var(--accent);
 }
 
+.navbar a:focus-visible,
+.controls input:focus-visible,
+.controls select:focus-visible,
+.controls button:focus-visible,
+.add-form input:focus-visible,
+.add-form textarea:focus-visible,
+.add-form button:focus-visible,
+.fav-btn:focus-visible,
+.pagination button:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, white 30%);
+  outline-offset: 2px;
+}
+
 /* КОНТЕНТ СТРАНИЦ (Задача №5)  */
 .page {
   padding: 2rem;
@@ -138,6 +155,21 @@ body {
 .add-form textarea {
   resize: vertical; 
   min-height: 100px;
+}
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.form-row input {
+  flex: 1;      
+  min-width: 0;
+}
+
+.add-form * {
+  box-sizing: border-box;
 }
 
 /* 6. СТАТИСТИКА (Задача №2) */
@@ -328,4 +360,53 @@ body {
   display: block;
   border-radius: 15px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 900px) {
+  #root {
+    padding: 1.5rem;
+  }
+
+  .navbar {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .movie-grid {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  #root {
+    padding: 1rem;
+  }
+
+  .page {
+    padding: 1.25rem;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .controls input,
+  .controls select,
+  .controls button {
+    width: 100%;
+  }
+
+  .card img {
+    height: 280px;
+  }
+
+  .modal-content {
+    padding: 22px;
+  }
+
+  .stats-container {
+    flex-direction: column;
+  }
 }

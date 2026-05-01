@@ -76,7 +76,7 @@ describe("MoviesPage", () => {
     ).toBeInTheDocument();
 
     fireEvent.change(titleInput, { target: { value: "Inception" } });
-    fireEvent.change(screen.getByDisplayValue("Select Genre"), {
+    fireEvent.change(screen.getByPlaceholderText("Genre"), {
       target: { value: "Action" },
     });
     fireEvent.change(screen.getByPlaceholderText("Year"), {
