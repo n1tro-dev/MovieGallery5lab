@@ -6,7 +6,6 @@ import {
 } from "./MovieContext";
 import { useFetch } from "./hooks/useFetch";
 import {
-  DEFAULT_MOVIES,
   createMovieOnApi,
   deleteMovieOnApi,
   fetchMoviesFromApi,
@@ -19,7 +18,7 @@ export const MovieProvider = ({ children }) => {
     const legacyMovies = localStorage.getItem("my_movies");
     const initial = savedLocalMovies || legacyMovies;
 
-    return initial ? JSON.parse(initial) : DEFAULT_MOVIES;
+    return initial ? JSON.parse(initial) : [];
   });
 
   const [favorites, setFavorites] = useState(() => {
